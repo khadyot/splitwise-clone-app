@@ -1,0 +1,20 @@
+{
+  "node": {
+    "409ff82848055c916a8b66e133aa4135ea428527e0": {
+      "workers": {
+        "app/join/page": {
+          "moduleId": 38891,
+          "async": false,
+          "exportedName": "joinGroup",
+          "filename": "app/actions.ts"
+        }
+      },
+      "layer": {
+        "app/join/page": "action-browser"
+      },
+      "exportedName": "joinGroup",
+      "filename": "app/actions.ts"
+    }
+  },
+  "edge": {}
+}

@@ -1,0 +1,19 @@
+0 verbose cli /Users/khadyot/.nvm/versions/node/v20.20.2/bin/node /Users/khadyot/.nvm/versions/node/v20.20.2/bin/npm
+1 info using npm@10.8.2
+2 info using node@v20.20.2
+3 silly config load:file:/Users/khadyot/.nvm/versions/node/v20.20.2/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/khadyot/Desktop/Ongoing/Projects_AI IDE/Splitwise/.npmrc
+5 silly config load:file:/Users/khadyot/.npmrc
+6 silly config load:file:/Users/khadyot/.nvm/versions/node/v20.20.2/etc/npmrc
+7 verbose title npm run build
+8 verbose argv "run" "build"
+9 verbose logfile logs-max:10 dir:/Users/khadyot/Desktop/Ongoing/Projects_AI IDE/Splitwise/.npm-cache/_logs/2026-07-11T21_36_36_012Z-
+10 verbose logfile /Users/khadyot/Desktop/Ongoing/Projects_AI IDE/Splitwise/.npm-cache/_logs/2026-07-11T21_36_36_012Z-debug-0.log
+11 silly logfile start cleaning logs, removing 1 files
+12 silly logfile done cleaning log files
+13 verbose cwd /Users/khadyot/Desktop/Ongoing/Projects_AI IDE/Splitwise
+14 verbose os Darwin 25.5.0
+15 verbose node v20.20.2
+16 verbose npm  v10.8.2
+17 verbose exit 0
+18 info ok
