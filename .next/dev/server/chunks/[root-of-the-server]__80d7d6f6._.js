@@ -639,12 +639,12 @@ async function POST(req) {
             case 'create_group':
                 {
                     const { name, currency } = payload;
-                    // create group directly to get a join code for testing
                     const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase();
                     const { data, error } = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["supabase"].from('groups').insert({
                         name,
                         currency,
-                        join_code: joinCode
+                        join_code: joinCode,
+                        created_at: new Date().toISOString()
                     }).select('id, join_code').single();
                     if (error) throw error;
                     return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
@@ -679,30 +679,28 @@ async function POST(req) {
                 }
             case 'add_expense':
                 {
-                    // To test shared expense, we need to add an expense using supabase directly 
-                    // since addExpense uses FormData which might be tricky to test with nested split logic.
                     const { groupId, description, amount, paidBy, category, splitType, splits } = payload;
-                    // Add expense
-                    const { data: expense, error: expErr } = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["supabase"].from('expenses').insert({
+                    const { data: expenseData, error: expenseError } = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["supabase"].from('expenses').insert({
                         group_id: groupId,
                         description,
                         amount,
                         paid_by: paidBy,
                         category,
-                        split_type: splitType
+                        split_type: splitType,
+                        created_at: new Date().toISOString()
                     }).select('id').single();
-                    if (expErr) throw expErr;
-                    // Add splits
-                    for (const split of splits){
-                        await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["supabase"].from('expense_splits').insert({
-                            expense_id: expense.id,
-                            participant_id: split.participantId,
-                            amount: split.amount
-                        });
-                    }
+                    if (expenseError) throw expenseError;
+                    const expenseId = expenseData.id;
+                    const splitsToInsert = splits.map((s)=>({
+                            expense_id: expenseId,
+                            participant_id: s.participantId,
+                            amount: s.amount
+                        }));
+                    const { error: splitsError } = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["supabase"].from('expense_splits').insert(splitsToInsert);
+                    if (splitsError) throw splitsError;
                     return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
                         success: true,
-                        expenseId: expense.id
+                        expenseId
                     });
                 }
             case 'cleanup':

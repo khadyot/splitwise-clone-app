@@ -1,0 +1,3 @@
+module.exports=[54799,(a,b,c)=>{b.exports=a.x("crypto",()=>require("crypto"))},59276,a=>{"use strict";var b=a.i(56004);a.s([],36644),a.i(36644),a.s(["404555e604ce9d2421d83ce2b9d014a8bd4f4ddc31",()=>b.createGroup,"409034ff8070439673f408be77b4f5ae69cb150fc0",()=>b.getDashboardData],59276)},6727,a=>{a.v(b=>Promise.all(["server/chunks/ssr/lib_logic_ts_24bc8d94._.js"].map(b=>a.l(b))).then(()=>b(29043)))}];
+
+//# sourceMappingURL=%5Broot-of-the-server%5D__ddcf4c9b._.js.map

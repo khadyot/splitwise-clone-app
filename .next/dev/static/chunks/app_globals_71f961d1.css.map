@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["file:///Users/khadyot/Desktop/Ongoing/Projects_AI%20IDE/Splitwise/app/globals.css"],"sourcesContent":["@import \"tailwindcss\";\n\n@theme {\n  --color-background: #f8f6f0;\n  --color-foreground: #171717;\n  \n  --color-brand-teal: #5bc5a7;\n  --color-brand-red: #ff652f;\n  --color-brand-dark: #1a1a1a;\n  --color-brand-gray: #eeeeee;\n  --color-brand-light: #f8f6f0;\n  \n  --color-pastel-purple: #ebe5f5;\n  --color-pastel-purpleText: #6b46c1;\n  --color-pastel-blue: #e3f2fd;\n  --color-pastel-blueText: #1e88e5;\n  --color-pastel-orange: #fff3e0;\n  --color-pastel-orangeText: #f57c00;\n  --color-pastel-green: #e8f5e9;\n  --color-pastel-greenText: #43a047;\n  --color-pastel-yellow: #fff9c4;\n  --color-pastel-yellowText: #fbc02d;\n  --color-pastel-pink: #fce4ec;\n  --color-pastel-pinkText: #d81b60;\n\n  --radius-2xl: 1rem;\n  --radius-3xl: 1.5rem;\n}\n\n:root {\n  --background: #f8f6f0;\n  --foreground: #171717;\n}\n\nbody {\n  color: var(--foreground);\n  background: var(--background);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;\n}\n"],"names":[],"mappings":"AAEA;;;;AA2BA;;;;;AAKA"}}]
+}

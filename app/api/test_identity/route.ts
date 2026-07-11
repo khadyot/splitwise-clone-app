@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { joinGroup, verifySession, getDashboardData } from '@/app/actions';
-import { sql } from '@vercel/postgres';
+import { supabase } from '@/lib/supabase';
 
 export async function POST(req: Request) {
     try {
@@ -11,12 +11,14 @@ export async function POST(req: Request) {
             case 'create_group': {
                 const { name, currency } = payload;
                 const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-                const { rows } = await sql`
-                    INSERT INTO groups (name, currency, join_code) 
-                    VALUES (${name}, ${currency}, ${joinCode}) 
-                    RETURNING id, join_code
-                `;
-                return NextResponse.json({ success: true, data: rows[0] });
+                const { data, error } = await supabase.from('groups').insert({
+                    name,
+                    currency,
+                    join_code: joinCode,
+                    created_at: new Date().toISOString()
+                }).select('id, join_code').single();
+                if (error) throw error;
+                return NextResponse.json({ success: true, data });
             }
             case 'join_group': {
                 const { joinCode, name } = payload;
@@ -39,25 +41,32 @@ export async function POST(req: Request) {
             case 'add_expense': {
                 const { groupId, description, amount, paidBy, category, splitType, splits } = payload;
                 
-                const { rows } = await sql`
-                    INSERT INTO expenses (group_id, description, amount, paid_by, category, split_type)
-                    VALUES (${groupId}, ${description}, ${amount}, ${paidBy}, ${category}, ${splitType})
-                    RETURNING id
-                `;
-                const expenseId = rows[0].id;
+                const { data: expenseData, error: expenseError } = await supabase.from('expenses').insert({
+                    group_id: groupId,
+                    description,
+                    amount,
+                    paid_by: paidBy,
+                    category,
+                    split_type: splitType,
+                    created_at: new Date().toISOString()
+                }).select('id').single();
+                if (expenseError) throw expenseError;
+                
+                const expenseId = expenseData.id;
 
-                for (const split of splits) {
-                    await sql`
-                        INSERT INTO expense_splits (expense_id, participant_id, amount)
-                        VALUES (${expenseId}, ${split.participantId}, ${split.amount})
-                    `;
-                }
+                const splitsToInsert = splits.map((s: any) => ({
+                    expense_id: expenseId,
+                    participant_id: s.participantId,
+                    amount: s.amount
+                }));
+                const { error: splitsError } = await supabase.from('expense_splits').insert(splitsToInsert);
+                if (splitsError) throw splitsError;
                 
                 return NextResponse.json({ success: true, expenseId });
             }
             case 'cleanup': {
                 const { groupId } = payload;
-                await sql`DELETE FROM groups WHERE id = ${groupId}`;
+                await supabase.from('groups').delete().eq('id', groupId);
                 return NextResponse.json({ success: true });
             }
             default:

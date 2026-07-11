@@ -60,7 +60,7 @@ export default function LandingPage() {
                         </div>
                         <h3 className="text-xl font-extrabold text-gray-900 mb-3">No forced signups</h3>
                         <p className="text-gray-600 leading-relaxed font-medium">
-                            Don't force your friends to download an app, verify an email, or create a password just to pay you back for pizza. Identity is tied to the device, not a bloated account.
+                            Don't force your friends to download an app, verify an email, or create a password just to pay you back for pizza. Group data lives securely in the cloud for everyone to see, while only login convenience is tied to your device—no bloated accounts required.
                         </p>
                     </div>
 
