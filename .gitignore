@@ -30,4 +30,11 @@ yarn-error.log*
 # Misc / Cache
 Library/
 *.zip
+claude_handoff*
+*.backup
+.npm-cache*
+
+
+
+
 
