@@ -13,6 +13,7 @@ export interface Group {
     members: string[]; // User IDs
     currency: string;  // ISO 4217 code, e.g. 'INR', 'USD'
     created_at: string;
+    join_code?: string;
 }
 
 export interface Split {
@@ -92,7 +93,8 @@ export async function readData(): Promise<Data> {
         name: g.name,
         members: rawParticipants.filter(p => p.group_id === g.id).map(p => p.id),
         currency: g.currency || 'INR',
-        created_at: g.created_at
+        created_at: g.created_at,
+        join_code: g.join_code
     }));
 
     // Map expenses

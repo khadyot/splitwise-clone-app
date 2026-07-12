@@ -27,7 +27,7 @@ export function CopyJoinLink({ joinCode }: CopyJoinLinkProps) {
             onClick={handleCopy} 
             variant="outline" 
             size="sm" 
-            className={`rounded-full h-8 px-3 text-xs flex gap-1.5 transition-colors ${copied ? 'bg-pastel-green text-pastel-greenText border-pastel-green' : ''}`}
+            className={`rounded-full h-9 px-4 text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs bg-white hover:bg-gray-50 border-gray-300 ${copied ? 'bg-pastel-green text-pastel-greenText border-pastel-green shadow-none' : ''}`}
         >
             {copied ? (
                 <>
@@ -36,7 +36,7 @@ export function CopyJoinLink({ joinCode }: CopyJoinLinkProps) {
                 </>
             ) : (
                 <>
-                    <LinkIcon className="w-3.5 h-3.5" />
+                    <LinkIcon className="w-3.5 h-3.5 text-gray-600" />
                     Copy Invite Link
                 </>
             )}

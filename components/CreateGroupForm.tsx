@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { createGroup } from "@/app/actions";
+import { GroupInviteHeader } from "@/components/GroupInviteHeader";
+import { CheckCircle2 } from "lucide-react";
 
 const SUPPORTED_CURRENCIES = [
     { code: "INR", label: "INR – Indian Rupee" },
@@ -48,6 +50,7 @@ export function CreateGroupForm() {
     const [currency, setCurrency] = useState("INR");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [createdGroup, setCreatedGroup] = useState<{ groupId: string; joinCode: string; name: string } | null>(null);
 
     useEffect(() => {
         setCurrency(guessDefaultCurrency());
@@ -60,12 +63,16 @@ export function CreateGroupForm() {
             const res = await createGroup(formData);
             if (res?.error) {
                 setError(res.error);
-            } else if (res?.success && res.groupId) {
+            } else if (res?.success && res.groupId && res.joinCode) {
                 if (typeof window !== "undefined") {
                     localStorage.setItem(`splitit_session_${res.groupId}`, res.sessionToken || "");
                     localStorage.setItem(`splitit_name_${res.groupId}`, res.name || "Organizer");
                 }
-                router.push(`/groups/${res.groupId}`);
+                setCreatedGroup({
+                    groupId: res.groupId,
+                    joinCode: res.joinCode,
+                    name: (formData.get("name") as string)?.trim() || "New Group",
+                });
             }
         } catch (err) {
             setError("Something went wrong creating the group. Please try again.");
@@ -73,6 +80,35 @@ export function CreateGroupForm() {
             setIsSubmitting(false);
         }
     };
+
+    if (createdGroup) {
+        return (
+            <div className="flex flex-col gap-4 pt-5 border-t mt-4 animate-fade-in bg-pastel-green/10 p-5 rounded-3xl border border-pastel-green/30">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-pastel-green text-pastel-greenText flex items-center justify-center font-extrabold shadow-2xs shrink-0">
+                        <CheckCircle2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h3 className="text-base font-extrabold text-gray-900">Group Created Successfully!</h3>
+                        <p className="text-xs font-medium text-gray-600">
+                            Share this code so everyone can enter their expenses without signing up.
+                        </p>
+                    </div>
+                </div>
+
+                <GroupInviteHeader joinCode={createdGroup.joinCode} />
+
+                <div className="flex justify-end pt-1">
+                    <Button
+                        onClick={() => router.push(`/groups/${createdGroup.groupId}`)}
+                        className="bg-black text-white hover:bg-gray-800 font-bold px-6 h-11 rounded-full shadow-sm w-full sm:w-auto flex items-center justify-center gap-2"
+                    >
+                        Go to Group Dashboard →
+                    </Button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <form action={handleSubmit} className="flex flex-col gap-3 pt-4 border-t mt-4">

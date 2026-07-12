@@ -13,6 +13,7 @@ import { notFound } from "next/navigation";
 import { Users, KeyRound, Utensils, Plane, Hotel, Gamepad2, ShoppingBag, Receipt } from "lucide-react";
 import { GroupIdentityGuard } from "@/components/GroupIdentityGuard";
 import { CopyJoinLink } from "@/components/CopyJoinLink";
+import { GroupInviteHeader } from "@/components/GroupInviteHeader";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -57,46 +58,42 @@ export default async function GroupPage(props: PageProps) {
 
     return (
         <Layout>
-            <GroupIdentityGuard groupId={group.id} joinCode={(group as any).join_code || ''} />
+            <GroupIdentityGuard groupId={group.id} joinCode={group.join_code || ''} />
             <div className="flex flex-col space-y-6">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-gray-200/80 pb-6 bg-white rounded-3xl p-6 shadow-sm">
-                    <div className="flex items-center space-x-4">
-                        <div className="h-14 w-14 bg-pastel-purple text-pastel-purpleText rounded-2xl flex items-center justify-center font-extrabold text-2xl shadow-xs">
-                            {group.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">{group.name}</h1>
-                                <span className="font-bold bg-gray-100 text-gray-700 px-2 py-0.5 rounded-lg text-xs uppercase tracking-wide border">
-                                    {group.currency}
-                                </span>
+                <div className="flex flex-col border-b border-gray-200/80 pb-6 bg-white rounded-3xl p-6 shadow-sm">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex items-center space-x-4">
+                            <div className="h-14 w-14 bg-pastel-purple text-pastel-purpleText rounded-2xl flex items-center justify-center font-extrabold text-2xl shadow-xs shrink-0">
+                                {group.name.charAt(0).toUpperCase()}
                             </div>
-                            <div className="flex items-center space-x-2 text-xs font-medium text-gray-500 mt-1">
-                                <span>{group.members.length} participants</span>
-                                <span>•</span>
-                                <span>Created {new Date(group.created_at).toLocaleDateString()}</span>
-                                {(group as any).join_code && (
-                                    <>
-                                        <span>•</span>
-                                        <span className="inline-flex items-center gap-1 font-mono font-bold text-gray-800 bg-pastel-yellow text-pastel-yellowText px-2 py-0.5 rounded">
-                                            <KeyRound className="w-3 h-3 inline" />
-                                            Code: {(group as any).join_code}
-                                        </span>
-                                        <CopyJoinLink joinCode={(group as any).join_code} />
-                                    </>
-                                )}
+                            <div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">{group.name}</h1>
+                                    <span className="font-bold bg-gray-100 text-gray-700 px-2 py-0.5 rounded-lg text-xs uppercase tracking-wide border">
+                                        {group.currency}
+                                    </span>
+                                </div>
+                                <div className="flex items-center space-x-2 text-xs font-medium text-gray-500 mt-1">
+                                    <span>{group.members.length} participants</span>
+                                    <span>•</span>
+                                    <span>Created {new Date(group.created_at).toLocaleDateString()}</span>
+                                </div>
                             </div>
                         </div>
+                        <div className="flex space-x-2 shrink-0">
+                            <a href="#quick-add">
+                                <Button className="bg-black text-white hover:bg-gray-800 shadow-sm">Add an expense</Button>
+                            </a>
+                            <a href="#settle-up">
+                                <Button variant="outline">Settle up</Button>
+                            </a>
+                        </div>
                     </div>
-                    <div className="flex space-x-2 mt-4 md:mt-0">
-                        <a href="#quick-add">
-                            <Button className="bg-black text-white hover:bg-gray-800 shadow-sm">Add an expense</Button>
-                        </a>
-                        <a href="#settle-up">
-                            <Button variant="outline">Settle up</Button>
-                        </a>
-                    </div>
+
+                    {group.join_code && (
+                        <GroupInviteHeader joinCode={group.join_code} />
+                    )}
                 </div>
 
                 <div className="grid gap-6 lg:grid-cols-3">
