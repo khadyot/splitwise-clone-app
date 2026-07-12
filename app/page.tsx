@@ -38,7 +38,7 @@ export default function LandingPage() {
                     </p>
                     
                     <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-                        <Link href="/dashboard" className="w-full sm:w-auto">
+                        <Link href="/dashboard#create-group" className="w-full sm:w-auto">
                             <Button className="w-full sm:w-auto rounded-full bg-black text-white hover:bg-gray-800 border-0 h-14 px-8 text-lg font-bold group">
                                 Start a group
                                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -91,7 +91,7 @@ export default function LandingPage() {
                     <p className="text-gray-700 mb-8 max-w-xl mx-auto font-medium">
                         Create a group in two clicks. Share the 6-letter join code. Log the expenses, hit settle up, and close the tab for good.
                     </p>
-                    <Link href="/dashboard">
+                    <Link href="/dashboard#create-group">
                         <Button className="rounded-full bg-black text-white hover:bg-gray-800 border-0 h-12 px-8 font-bold">
                             Create your first group
                         </Button>

@@ -4,9 +4,10 @@ import { readData, writeData, Group, Expense, generateId, User } from '@/lib/sto
 import { supabase } from '@/lib/supabase';
 import { revalidatePath } from 'next/cache';
 
-export async function createGroup(formData: FormData) {
-    const name = formData.get('name') as string;
-    if (!name) return;
+export async function createGroup(formData: FormData): Promise<{ success?: boolean; groupId?: string; joinCode?: string; sessionToken?: string; name?: string; error?: string }> {
+    const name = (formData.get('name') as string)?.trim();
+    const yourName = (formData.get('yourName') as string)?.trim() || 'Organizer';
+    if (!name) return { error: 'Group name is required.' };
 
     const currency = (formData.get('currency') as string) || 'INR';
     const validCurrencies = ['INR', 'USD', 'EUR', 'GBP', 'AUD', 'CAD', 'SGD', 'JPY', 'CNY', 'AED'];
@@ -33,10 +34,22 @@ export async function createGroup(formData: FormData) {
 
     if (error) {
         console.error('Error creating group:', error);
-        return;
+        return { error: 'Failed to create group. Please try again.' };
     }
 
+    const { data: inserted, error: insertErr } = await supabase.from('participants').insert({
+        id: generateId(),
+        group_id: id,
+        name: yourName,
+    }).select('session_token').single();
+
+    let sessionToken = inserted?.session_token;
+
+    revalidatePath(`/groups/${id}`);
+    revalidatePath('/dashboard');
     revalidatePath('/');
+
+    return { success: true, groupId: id, joinCode: join_code, sessionToken, name: yourName };
 }
 
 export async function joinGroup(formData: FormData): Promise<{ success?: boolean; groupId?: string; sessionToken?: string; error?: string }> {
@@ -87,13 +100,19 @@ export async function joinGroup(formData: FormData): Promise<{ success?: boolean
 
 export async function verifySession(groupId: string, sessionToken: string): Promise<boolean> {
     if (!groupId || !sessionToken) return false;
-    const { data } = await supabase
-        .from('participants')
-        .select('id')
-        .eq('group_id', groupId)
-        .eq('session_token', sessionToken)
-        .maybeSingle();
-    return !!data;
+    try {
+        const { data, error } = await supabase
+            .from('participants')
+            .select('id')
+            .eq('group_id', groupId)
+            .eq('session_token', sessionToken)
+            .maybeSingle();
+        if (error || !data) return false;
+        return true;
+    } catch (err) {
+        console.error('verifySession error:', err);
+        return false;
+    }
 }
 
 export async function getDashboardData(sessionTokens: string[]) {

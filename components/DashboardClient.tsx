@@ -33,9 +33,22 @@ export function DashboardClient() {
             const sessionTokens: string[] = [];
 
             for (const key of keys) {
-                if (key.startsWith("splitwise_session_")) {
+                if (key.startsWith("splitit_session_")) {
                     const token = localStorage.getItem(key);
-                    if (token) sessionTokens.push(token);
+                    if (token && !sessionTokens.includes(token)) sessionTokens.push(token);
+                } else if (key.startsWith("splitwise_session_")) {
+                    const token = localStorage.getItem(key);
+                    if (token) {
+                        if (!sessionTokens.includes(token)) sessionTokens.push(token);
+                        const groupId = key.replace("splitwise_session_", "");
+                        localStorage.setItem(`splitit_session_${groupId}`, token);
+                        localStorage.removeItem(key);
+                        const oldName = localStorage.getItem(`splitwise_name_${groupId}`);
+                        if (oldName) {
+                            localStorage.setItem(`splitit_name_${groupId}`, oldName);
+                            localStorage.removeItem(`splitwise_name_${groupId}`);
+                        }
+                    }
                 }
             }
 
@@ -157,7 +170,7 @@ export function DashboardClient() {
                     )}
                 </div>
 
-                <div className="bg-white p-6 rounded-3xl border border-gray-200/80 shadow-sm">
+                <div id="create-group" className="bg-white p-6 rounded-3xl border border-gray-200/80 shadow-sm scroll-mt-24">
                     <CreateGroupForm />
                 </div>
             </div>

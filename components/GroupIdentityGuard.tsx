@@ -14,29 +14,60 @@ export function GroupIdentityGuard({ groupId, joinCode }: GroupIdentityGuardProp
     const [isChecking, setIsChecking] = useState(true);
 
     useEffect(() => {
+        let isMounted = true;
+        const timeoutId = setTimeout(() => {
+            if (isMounted) {
+                router.replace(`/join?code=${joinCode}`);
+            }
+        }, 8000);
+
         const checkIdentity = async () => {
-            const token = localStorage.getItem(`splitit_session_${groupId}`);
+            let token = localStorage.getItem(`splitit_session_${groupId}`);
             if (!token) {
-                // No token found, redirect to join screen with the code pre-filled
-                router.replace(`/join?code=${joinCode}`);
+                const oldToken = localStorage.getItem(`splitwise_session_${groupId}`);
+                if (oldToken) {
+                    token = oldToken;
+                    localStorage.setItem(`splitit_session_${groupId}`, oldToken);
+                    localStorage.removeItem(`splitwise_session_${groupId}`);
+                    const oldName = localStorage.getItem(`splitwise_name_${groupId}`);
+                    if (oldName) {
+                        localStorage.setItem(`splitit_name_${groupId}`, oldName);
+                        localStorage.removeItem(`splitwise_name_${groupId}`);
+                    }
+                }
+            }
+
+            if (!token) {
+                clearTimeout(timeoutId);
+                if (isMounted) router.replace(`/join?code=${joinCode}`);
                 return;
             }
 
-            // Verify the token on the server
-            const isValid = await verifySession(groupId, token);
-            if (!isValid) {
-                // Token is invalid (e.g. participant deleted, DB reset)
-                localStorage.removeItem(`splitit_session_${groupId}`);
-                localStorage.removeItem(`splitit_name_${groupId}`);
-                router.replace(`/join?code=${joinCode}`);
-                return;
-            }
+            try {
+                const isValid = await verifySession(groupId, token);
+                clearTimeout(timeoutId);
+                if (!isMounted) return;
 
-            // Valid identity found
-            setIsChecking(false);
+                if (!isValid) {
+                    localStorage.removeItem(`splitit_session_${groupId}`);
+                    localStorage.removeItem(`splitit_name_${groupId}`);
+                    router.replace(`/join?code=${joinCode}`);
+                    return;
+                }
+
+                setIsChecking(false);
+            } catch (e) {
+                clearTimeout(timeoutId);
+                if (isMounted) router.replace(`/join?code=${joinCode}`);
+            }
         };
 
         checkIdentity();
+
+        return () => {
+            isMounted = false;
+            clearTimeout(timeoutId);
+        };
     }, [groupId, joinCode, router]);
 
     if (isChecking) {

@@ -9,9 +9,8 @@ export function NavbarIdentity() {
 
     useEffect(() => {
         setMounted(true);
-        // Look for the first splitwise_name_ key in localStorage
         const keys = Object.keys(localStorage);
-        const nameKey = keys.find(k => k.startsWith('splitwise_name_'));
+        const nameKey = keys.find(k => k.startsWith('splitit_name_')) || keys.find(k => k.startsWith('splitwise_name_'));
         if (nameKey) {
             setName(localStorage.getItem(nameKey));
         }
