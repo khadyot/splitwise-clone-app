@@ -26,9 +26,20 @@ type DashboardData = {
 export function DashboardClient() {
     const [data, setData] = useState<DashboardData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
 
     useEffect(() => {
+        let isTimedOut = false;
+        const timer = setTimeout(() => {
+            isTimedOut = true;
+            setError("Request timed out while connecting to the database.");
+            setIsLoading(false);
+        }, 8000);
+
         const fetchDashboard = async () => {
+            setIsLoading(true);
+            setError(null);
             const keys = Object.keys(localStorage);
             const sessionTokens: string[] = [];
 
@@ -53,6 +64,8 @@ export function DashboardClient() {
             }
 
             if (sessionTokens.length === 0) {
+                clearTimeout(timer);
+                if (isTimedOut) return;
                 setData({ groups: [], totalOwe: 0, totalOwed: 0 });
                 setIsLoading(false);
                 return;
@@ -60,17 +73,24 @@ export function DashboardClient() {
 
             try {
                 const result = await getDashboardData(sessionTokens);
-                setData(result);
+                clearTimeout(timer);
+                if (isTimedOut) return;
+                setData(result || { groups: [], totalOwe: 0, totalOwed: 0 });
             } catch (err) {
+                clearTimeout(timer);
+                if (isTimedOut) return;
                 console.error("Failed to load dashboard data:", err);
+                setError("Could not load your groups. Please check your connection and try again.");
                 setData({ groups: [], totalOwe: 0, totalOwed: 0 });
             } finally {
-                setIsLoading(false);
+                if (!isTimedOut) setIsLoading(false);
             }
         };
 
         fetchDashboard();
-    }, []);
+
+        return () => clearTimeout(timer);
+    }, [retryCount]);
 
     if (isLoading) {
         return (
@@ -80,10 +100,18 @@ export function DashboardClient() {
         );
     }
 
-    const { groups, totalOwe, totalOwed } = data!;
+    const { groups, totalOwe, totalOwed } = data || { groups: [], totalOwe: 0, totalOwed: 0 };
 
     return (
         <div className="flex flex-col space-y-6 max-w-5xl mx-auto">
+            {error && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center justify-between text-sm text-red-600 font-medium">
+                    <span>{error}</span>
+                    <Button size="sm" variant="outline" onClick={() => setRetryCount(c => c + 1)} className="border-red-200 hover:bg-red-100 text-red-700">
+                        Retry
+                    </Button>
+                </div>
+            )}
             <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-gray-200/80 pb-6 bg-white rounded-3xl p-6 shadow-sm">
                 <div>
                     <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">Dashboard</h1>
