@@ -1,4 +1,4 @@
-# AGENTS.md — Splitwise (working name, rebrand TBD)
+# AGENTS.md — SplitIt
 
 These rules govern every task any agent performs on this project. Read this file in full before starting any task, then read every file inside `skills/` that's relevant to that task.
 
@@ -6,7 +6,7 @@ These rules govern every task any agent performs on this project. Read this file
 
 This is a free, no-account, one-off expense-splitting web app. A person creates a group, gets a short join code, shares it with whoever they're splitting costs with, and everyone joins by entering the code and a name. Nobody signs up. Nobody creates a password. When the trip or dinner is over, people can walk away and never open the app again.
 
-This is NOT a Splitwise clone in ambition. It is a direct answer to Splitwise's most common 2024-2026 user complaints: forced signup for every participant, daily expense caps, and a Pro paywall for basic functionality. Every architecture and product decision should be checked against: "does this add friction for a casual, one-off group?" If yes, cut it or defer it.
+This is NOT a clone in ambition. It is a direct answer to modern expense app complaints: forced signup for every participant, daily expense caps, and a Pro paywall for basic functionality. Every architecture and product decision should be checked against: "does this add friction for a casual, one-off group?" If yes, cut it or defer it.
 
 ## Tech Stack
 

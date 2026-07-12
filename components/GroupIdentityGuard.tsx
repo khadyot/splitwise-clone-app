@@ -15,7 +15,7 @@ export function GroupIdentityGuard({ groupId, joinCode }: GroupIdentityGuardProp
 
     useEffect(() => {
         const checkIdentity = async () => {
-            const token = localStorage.getItem(`splitwise_session_${groupId}`);
+            const token = localStorage.getItem(`splitit_session_${groupId}`);
             if (!token) {
                 // No token found, redirect to join screen with the code pre-filled
                 router.replace(`/join?code=${joinCode}`);
@@ -26,8 +26,8 @@ export function GroupIdentityGuard({ groupId, joinCode }: GroupIdentityGuardProp
             const isValid = await verifySession(groupId, token);
             if (!isValid) {
                 // Token is invalid (e.g. participant deleted, DB reset)
-                localStorage.removeItem(`splitwise_session_${groupId}`);
-                localStorage.removeItem(`splitwise_name_${groupId}`);
+                localStorage.removeItem(`splitit_session_${groupId}`);
+                localStorage.removeItem(`splitit_name_${groupId}`);
                 router.replace(`/join?code=${joinCode}`);
                 return;
             }

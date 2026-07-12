@@ -42,8 +42,8 @@ function JoinForm() {
             } else if (res.success && res.groupId) {
                 // Save guest identity in local storage / session per AGENTS.md
                 if (typeof window !== "undefined") {
-                    localStorage.setItem(`splitwise_session_${res.groupId}`, res.sessionToken || "");
-                    localStorage.setItem(`splitwise_name_${res.groupId}`, name.trim());
+                    localStorage.setItem(`splitit_session_${res.groupId}`, res.sessionToken || "");
+                    localStorage.setItem(`splitit_name_${res.groupId}`, name.trim());
                 }
                 router.push(`/groups/${res.groupId}`);
             }
