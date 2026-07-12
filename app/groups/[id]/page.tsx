@@ -14,6 +14,9 @@ import { Users, KeyRound, Utensils, Plane, Hotel, Gamepad2, ShoppingBag, Receipt
 import { GroupIdentityGuard } from "@/components/GroupIdentityGuard";
 import { CopyJoinLink } from "@/components/CopyJoinLink";
 import { GroupInviteHeader } from "@/components/GroupInviteHeader";
+import { ExpenseItem } from "@/components/ExpenseItem";
+import { ParticipantRow } from "@/components/ParticipantRow";
+import { GroupSettings } from "@/components/GroupSettings";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -128,41 +131,24 @@ export default async function GroupPage(props: PageProps) {
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    {groupExpenses.slice().reverse().map((expense) => {
-                                        const cat = getCategoryInfo(expense.description);
-                                        const perPersonShare = expense.amount / (group.members.length || 1);
-                                        return (
-                                            <div
-                                                key={expense.id}
-                                                className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-200/80 hover:shadow-md transition-all gap-4"
-                                            >
-                                                <div className="flex items-center space-x-3.5 min-w-0">
-                                                    <div className={`h-11 w-11 rounded-2xl flex flex-shrink-0 items-center justify-center ${cat.bg} ${cat.text} shadow-xs`}>
-                                                        {cat.icon}
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <p className="font-bold text-gray-900 truncate">{expense.description}</p>
-                                                        <p className="text-xs text-gray-500 truncate mt-0.5">
-                                                            {`${getUserName(expense.paidBy)} paid `}
-                                                            <span className="font-semibold text-gray-700">{formatCurrency(expense.amount, group.currency)}</span>
-                                                            {` • ${new Date(expense.date).toLocaleDateString()}`}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right flex-shrink-0 pl-2">
-                                                    <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">
-                                                        {expense.type || 'EQUAL'} split
-                                                    </p>
-                                                    <p className="font-extrabold text-gray-900 text-base">
-                                                        {formatCurrency(expense.amount, group.currency)}
-                                                    </p>
-                                                    <p className="text-[11px] text-gray-500 mt-0.5">
-                                                        ({formatCurrency(perPersonShare, group.currency)}/person)
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                                    {groupExpenses.slice().reverse().map((expense) => (
+                                        <ExpenseItem 
+                                            key={expense.id} 
+                                            expense={{
+                                                id: expense.id,
+                                                description: expense.description,
+                                                amount: expense.amount,
+                                                paidBy: expense.paidBy,
+                                                date: expense.date,
+                                                type: expense.type,
+                                                splits: expense.splits
+                                            }} 
+                                            groupId={group.id}
+                                            currency={group.currency}
+                                            payerName={getUserName(expense.paidBy)}
+                                            members={group.members.map(id => ({ id, name: getUserName(id) }))}
+                                        />
+                                    ))}
                                 </div>
                             )}
                         </div>
@@ -192,11 +178,11 @@ export default async function GroupPage(props: PageProps) {
                         </div>
 
                         <div className="bg-white p-6 rounded-3xl border border-gray-200/80 shadow-sm">
-                            <div className="flex items-center justify-between mb-4">
+                            <div className="flex flex-col gap-3 mb-4 pb-3 border-b border-gray-100/60 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
                                 <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Participants</h2>
                                 {(group as any).join_code && (
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs font-mono font-bold bg-pastel-yellow text-pastel-yellowText px-2 py-0.5 rounded">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="text-[11px] font-mono font-bold bg-pastel-yellow text-pastel-yellowText px-2.5 py-1.5 rounded-xl border border-pastel-yellowText/10">
                                             Code: {(group as any).join_code}
                                         </span>
                                         <CopyJoinLink joinCode={(group as any).join_code} />
@@ -205,12 +191,12 @@ export default async function GroupPage(props: PageProps) {
                             </div>
                             <ul className="space-y-2.5 mb-4">
                                 {group.members.map((memberId) => (
-                                    <li key={memberId} className="flex items-center gap-2.5 text-sm font-medium text-gray-700">
-                                        <div className="h-7 w-7 rounded-full bg-pastel-blue text-pastel-blueText flex items-center justify-center text-xs font-bold">
-                                            {getUserName(memberId).charAt(0).toUpperCase()}
-                                        </div>
-                                        <span>{getUserName(memberId)}</span>
-                                    </li>
+                                    <ParticipantRow 
+                                        key={memberId} 
+                                        groupId={group.id} 
+                                        participantId={memberId} 
+                                        name={getUserName(memberId)} 
+                                    />
                                 ))}
                             </ul>
                             <form action={addMember.bind(null, group.id)} className="flex gap-2 pt-3 border-t border-gray-100">
@@ -220,6 +206,8 @@ export default async function GroupPage(props: PageProps) {
                                 </Button>
                             </form>
                         </div>
+
+                        <GroupSettings groupId={group.id} />
                     </div>
                 </div>
             </div>

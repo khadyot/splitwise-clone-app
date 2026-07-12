@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { createExpense } from "@/app/actions";
+import { createExpense, editExpense } from "@/app/actions";
 import { SplitSquareHorizontal, Percent, Equal } from "lucide-react";
 
 interface Member {
@@ -11,16 +11,35 @@ interface Member {
     name: string;
 }
 
+interface ExpenseData {
+    id: string;
+    description: string;
+    amount: number;
+    paidBy: string | any; // To handle both string and array for now
+    type?: 'EQUAL' | 'EXACT' | 'PERCENTAGE';
+    splits?: { userId: string; amount: number }[];
+}
+
 interface AddExpenseFormProps {
     groupId: string;
     members: Member[];
     currency: string;
+    expense?: ExpenseData;
+    onSuccess?: () => void;
 }
 
-export function AddExpenseForm({ groupId, members, currency }: AddExpenseFormProps) {
-    const [amount, setAmount] = useState<number | "">("");
-    const [splitType, setSplitType] = useState<"EQUAL" | "EXACT" | "PERCENTAGE">("EQUAL");
-    const [splits, setSplits] = useState<Record<string, string>>({});
+export function AddExpenseForm({ groupId, members, currency, expense, onSuccess }: AddExpenseFormProps) {
+    const [amount, setAmount] = useState<number | "">(expense ? expense.amount : "");
+    const [splitType, setSplitType] = useState<"EQUAL" | "EXACT" | "PERCENTAGE">(expense?.type || "EQUAL");
+    
+    // Convert initial splits if exact/percentage
+    const initialSplits = expense?.splits?.reduce((acc, split) => {
+        if (expense.type === 'EXACT') acc[split.userId] = String(split.amount);
+        if (expense.type === 'PERCENTAGE') acc[split.userId] = String((split.amount / expense.amount) * 100);
+        return acc;
+    }, {} as Record<string, string>) || {};
+
+    const [splits, setSplits] = useState<Record<string, string>>(initialSplits);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSplitChange = (memberId: string, value: string) => {
@@ -31,10 +50,15 @@ export function AddExpenseForm({ groupId, members, currency }: AddExpenseFormPro
         if (isSubmitting) return;
         setIsSubmitting(true);
         try {
-            await createExpense(groupId, formData);
-            setAmount("");
-            setSplitType("EQUAL");
-            setSplits({});
+            if (expense) {
+                await editExpense(groupId, expense.id, formData);
+            } else {
+                await createExpense(groupId, formData);
+                setAmount("");
+                setSplitType("EQUAL");
+                setSplits({});
+            }
+            if (onSuccess) onSuccess();
         } finally {
             setIsSubmitting(false);
         }
@@ -49,7 +73,7 @@ export function AddExpenseForm({ groupId, members, currency }: AddExpenseFormPro
             <div className="grid gap-5 md:grid-cols-2">
                 <div className="space-y-1.5">
                     <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Description</label>
-                    <Input name="description" placeholder="e.g. Dinner, Taxi..." required className="font-semibold text-gray-900" />
+                    <Input name="description" defaultValue={expense?.description || ""} placeholder="e.g. Dinner, Taxi..." required className="font-semibold text-gray-900" />
                 </div>
                 <div className="space-y-1.5">
                     <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Amount ({currency})</label>
@@ -72,7 +96,7 @@ export function AddExpenseForm({ groupId, members, currency }: AddExpenseFormPro
                     name="paidBy"
                     className="flex h-11 w-full rounded-xl border border-gray-200/80 bg-white px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-black shadow-sm transition-all"
                     required
-                    defaultValue=""
+                    defaultValue={expense ? (typeof expense.paidBy === 'string' ? expense.paidBy : expense.paidBy?.[0]?.userId) : ""}
                 >
                     <option value="" disabled>Select Participant...</option>
                     {members.map((m) => (
@@ -165,7 +189,7 @@ export function AddExpenseForm({ groupId, members, currency }: AddExpenseFormPro
             </div>
 
             <Button type="submit" disabled={isSubmitting} className="w-full h-12 mt-2 text-base shadow-sm">
-                {isSubmitting ? "Adding..." : "Add Expense"}
+                {isSubmitting ? (expense ? "Saving..." : "Adding...") : (expense ? "Save Changes" : "Add Expense")}
             </Button>
         </form>
     );

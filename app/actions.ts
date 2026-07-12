@@ -353,3 +353,171 @@ export async function settleUp(
     revalidatePath(`/groups/${groupId}`);
     revalidatePath('/');
 }
+
+export async function deleteGroup(groupId: string) {
+    if (!groupId) return { error: 'Group ID is required.' };
+    const { error } = await supabase.from('groups').delete().eq('id', groupId);
+    if (error) {
+        console.error('Error deleting group:', error);
+        return { error: 'Failed to delete group.' };
+    }
+    revalidatePath('/dashboard');
+    revalidatePath('/');
+    return { success: true };
+}
+
+export async function deleteExpense(groupId: string, expenseId: string) {
+    if (!expenseId) return { error: 'Expense ID is required.' };
+    const { error } = await supabase.from('expenses').delete().eq('id', expenseId);
+    if (error) {
+        console.error('Error deleting expense:', error);
+        return { error: 'Failed to delete expense.' };
+    }
+    revalidatePath(`/groups/${groupId}`);
+    return { success: true };
+}
+
+export async function editExpense(groupId: string, expenseId: string, formData: FormData) {
+    const description = formData.get('description') as string;
+    const amount = Number(formData.get('amount'));
+    const paidBy = formData.get('paidBy') as string;
+    const splitTypeRaw = formData.get('splitType') as string;
+    const splitType = (splitTypeRaw && ['EQUAL', 'EXACT', 'PERCENTAGE'].includes(splitTypeRaw))
+        ? (splitTypeRaw as 'EQUAL' | 'EXACT' | 'PERCENTAGE')
+        : 'EQUAL';
+
+    if (!description || !amount || !paidBy || !expenseId) return { error: 'Missing required fields.' };
+
+    const { data: participantsRes } = await supabase.from('participants').select('id').eq('group_id', groupId);
+    let participantIds = (participantsRes || []).map(p => p.id);
+    if (participantIds.length === 0) {
+        const membersJson = formData.get('membersJson') as string;
+        if (membersJson) {
+            try { participantIds = JSON.parse(membersJson); } catch {}
+        }
+    }
+
+    const { error: updateErr } = await supabase.from('expenses').update({
+        description,
+        amount,
+        paid_by: paidBy,
+        split_type: splitType,
+    }).eq('id', expenseId);
+
+    if (updateErr) {
+        console.error('Error updating expense:', updateErr);
+        return { error: 'Failed to update expense.' };
+    }
+
+    let parsedSplits: Record<string, string> = {};
+    const splitsJson = formData.get('splitsJson') as string;
+    if (splitsJson) {
+        try { parsedSplits = JSON.parse(splitsJson); } catch {}
+    }
+
+    const count = participantIds.length;
+    const splitsToInsert: { expense_id: string; participant_id: string; amount: number }[] = [];
+
+    if (splitType === 'EQUAL') {
+        const baseShare = Math.floor((amount * 100) / count) / 100;
+        let remaining = Number(amount.toFixed(2));
+        for (let i = 0; i < count; i++) {
+            const pid = participantIds[i];
+            let share: number;
+            if (i === count - 1) {
+                share = Number(remaining.toFixed(2));
+            } else {
+                share = baseShare;
+                remaining = Number((remaining - share).toFixed(2));
+            }
+            splitsToInsert.push({ expense_id: expenseId, participant_id: pid, amount: share });
+        }
+    } else if (splitType === 'EXACT') {
+        for (const pid of participantIds) {
+            const valStr = (formData.get(`split_${pid}`) as string) || parsedSplits[pid] || '0';
+            const share = Number(Number(valStr).toFixed(2)) || 0;
+            splitsToInsert.push({ expense_id: expenseId, participant_id: pid, amount: share });
+        }
+    } else if (splitType === 'PERCENTAGE') {
+        for (const pid of participantIds) {
+            const valStr = (formData.get(`split_${pid}`) as string) || parsedSplits[pid] || '0';
+            const pct = Number(valStr) || 0;
+            const share = Number(((amount * pct) / 100).toFixed(2)) || 0;
+            splitsToInsert.push({ expense_id: expenseId, participant_id: pid, amount: share });
+        }
+    }
+
+    // Insert new splits first, then delete old ones to prevent orphaned expenses on failure
+    if (splitsToInsert.length > 0) {
+        const { data: insertedSplits, error: insertErr } = await supabase.from('expense_splits').insert(splitsToInsert).select('id');
+        if (insertErr || !insertedSplits) {
+            console.error('Error inserting new splits:', insertErr);
+            return { error: 'Failed to insert new splits.' };
+        }
+        
+        const insertedIds = insertedSplits.map(s => s.id);
+        
+        // Delete all old splits for this expense that are NOT the ones we just inserted
+        await supabase.from('expense_splits').delete()
+            .eq('expense_id', expenseId)
+            .not('id', 'in', `(${insertedIds.join(',')})`);
+    } else {
+        // If there are no splits to insert (which shouldn't happen, but just in case)
+        await supabase.from('expense_splits').delete().eq('expense_id', expenseId);
+    }
+
+    revalidatePath(`/groups/${groupId}`);
+    return { success: true };
+}
+
+export async function removeParticipant(groupId: string, participantId: string) {
+    if (!groupId || !participantId) return { error: 'Missing required fields.' };
+    
+    // We need to calculate balances for this group to ensure the participant's balance is exactly 0.
+    const data = await readData();
+    const group = data.groups.find(g => g.id === groupId);
+    if (!group) return { error: 'Group not found.' };
+
+    const groupExpenses = data.expenses.filter(e => e.groupId === groupId);
+    const groupSettlements = data.settlements.filter(s => s.groupId === groupId);
+    
+    const { balances } = await import('@/lib/logic').then(m => m.calculateBalances(group, groupExpenses, data.users, groupSettlements));
+    
+    const pBalance = balances.find(b => b.userId === participantId);
+    if (pBalance && pBalance.amount !== 0) {
+        return { error: 'Participant must settle all debts (balance must be zero) before they can be removed.' };
+    }
+
+    const { error } = await supabase.from('participants').delete().eq('id', participantId);
+    if (error) {
+        console.error('Error removing participant:', error);
+        return { error: 'Failed to remove participant.' };
+    }
+
+    revalidatePath(`/groups/${groupId}`);
+    return { success: true };
+}
+
+export async function leaveGroup(groupId: string, sessionToken: string) {
+    if (!groupId || !sessionToken) return { error: 'Missing required fields.' };
+
+    const { data: participant, error: fetchErr } = await supabase
+        .from('participants')
+        .select('id')
+        .eq('group_id', groupId)
+        .eq('session_token', sessionToken)
+        .maybeSingle();
+
+    if (fetchErr || !participant) {
+        return { error: 'Participant session not found.' };
+    }
+
+    // Use removeParticipant to safely remove with 0 balance check
+    const result = await removeParticipant(groupId, participant.id);
+    if (result.error) {
+        return result;
+    }
+
+    revalidatePath('/dashboard');
+    return { success: true };
+}
